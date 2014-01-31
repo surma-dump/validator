@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -29,4 +30,22 @@ func TestNonzeroPrimitives(t *testing.T) {
 		t.Fatalf("Validation succeeded unexpectedly")
 	}
 
+}
+
+func TestParseOptions_SimpleSplit(t *testing.T) {
+	got, err := parseOptions(`a, b, c=astring, d='a spaced string', e='a spaced, separated string'`)
+	if err != nil {
+		t.Fatalf("Parsing failed: %s", err)
+	}
+	expected := map[string]string{
+		"a": "",
+		"b": "",
+		"c": "astring",
+		"d": "a spaced string",
+		"e": "a spaced, separated string",
+	}
+
+	if !reflect.DeepEqual(got, expected) {
+		t.Fatalf("Expected %#v, got %#v", expected, got)
+	}
 }

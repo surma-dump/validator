@@ -58,14 +58,12 @@ func parseOptions(options string) (map[string]string, error) {
 	stringMode := false
 	s.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		for i := range data {
-			if data[i] == '"' && !stringMode {
+			if data[i] == '\'' && !stringMode {
 				stringMode = true
-			} else if data[i] == '"' && stringMode {
+			} else if data[i] == '\'' && stringMode {
 				stringMode = false
-			} else if data[i] == '\\' && stringMode {
-				i++
 			} else if data[i] == ',' && !stringMode {
-				return i, data[0:i], nil
+				return i + 1, data[0:i], nil
 			}
 		}
 		if stringMode && atEOF {
@@ -74,6 +72,7 @@ func parseOptions(options string) (map[string]string, error) {
 		if !stringMode && atEOF {
 			return len(data), data, nil
 		}
+
 		// Slice doesn't contain a complete token, try again with more data
 		return 0, nil, nil
 	})
@@ -81,7 +80,11 @@ func parseOptions(options string) (map[string]string, error) {
 	for s.Scan() {
 		token := s.Text()
 		idx := strings.IndexByte(token, '=')
-		optionsMap[token[0:idx]] = token[idx+1:]
+		if idx == -1 {
+			token = token + "="
+			idx = len(token) - 1
+		}
+		optionsMap[strings.TrimSpace(token[0:idx])] = strings.Trim(token[idx+1:], " '")
 	}
 	return optionsMap, s.Err()
 }
