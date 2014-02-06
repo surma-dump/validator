@@ -7,8 +7,8 @@ import (
 
 func TestNonzeroPrimitives(t *testing.T) {
 	type Type struct {
-		A int
-		B string
+		A int    `validator:"nonzero"`
+		B string `validator:"nonzero"`
 	}
 
 	x := Type{
@@ -22,12 +22,12 @@ func TestNonzeroPrimitives(t *testing.T) {
 
 	x.A = 0
 	if err := Validate(x); err == nil {
-		t.Fatalf("Validation succeeded unexpectedly")
+		t.Fatalf("Validation of A succeeded unexpectedly")
 	}
 
 	x.A, x.B = 4, ""
 	if err := Validate(x); err == nil {
-		t.Fatalf("Validation succeeded unexpectedly")
+		t.Fatalf("Validation of B succeeded unexpectedly")
 	}
 
 }

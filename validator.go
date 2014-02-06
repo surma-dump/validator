@@ -20,17 +20,18 @@ func Validate(x interface{}) error {
 		if !isExportedField(v.Type().Field(i)) {
 			continue
 		}
-		if err := validate(v.Field(i), v.Type().Field(i).Tag.Get("validation")); err != nil {
+		if err := validate(v.Field(i), v.Type().Field(i).Tag.Get("validator")); err != nil {
 			return fmt.Errorf("Field %s is invalid: %s", v.Type().Field(i).Name, err)
 		}
 	}
 	return nil
 }
 
-func validate(x interface{}, options string) error {
-	v := reflect.ValueOf(x)
-	validatorFuncs, ok := validatorFuncMap[v.Type().Name()]
+func validate(v reflect.Value, options string) error {
+	name := v.Type().Name()
+	validatorFuncs, ok := validatorFuncMap[name]
 	if !ok {
+		name = v.Kind().String()
 		validatorFuncs, ok = validatorFuncMap[v.Kind().String()]
 		if !ok {
 			return fmt.Errorf("No validators found for either %s nor %s", v.Type().Name(), v.Kind().String())
@@ -40,8 +41,16 @@ func validate(x interface{}, options string) error {
 	if err != nil {
 		return err
 	}
+	for option, args := range optionsMap {
 
-	_, _ = validatorFuncs, optionsMap
+		validatorFunc, ok := validatorFuncs[options]
+		if !ok {
+			return fmt.Errorf("Unknown option \"%s\" for type %s", option, name)
+		}
+		if err := validatorFunc.Call(v, args); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
